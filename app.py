@@ -781,11 +781,5 @@ def export_pdf():
         headers={'Content-Disposition': f'attachment; filename=dashboard_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'}
     )
 
-# сервер Render
-with app.app_context():
-    from database import init_db, load_test_data
-    init_db()
-    load_test_data()
-
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
