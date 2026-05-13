@@ -1,0 +1,486 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .kpi-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 16px;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: transform 0.3s;
+    }
+    
+    .kpi-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .kpi-card.blue { border-top: 4px solid #4a90e2; }
+    .kpi-card.green { border-top: 4px solid #50c878; }
+    .kpi-card.yellow { border-top: 4px solid #f4c542; }
+    .kpi-card.red { border-top: 4px solid #e74c3c; }
+    .kpi-card.purple { border-top: 4px solid #9b59b6; }
+    
+    .kpi-title {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        color: #7f8c8d;
+        letter-spacing: 2px;
+    }
+    
+    .kpi-value {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-top: 0.5rem;
+        color: #2c3e50;
+    }
+    
+    .period-selector {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        gap: 2rem;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .period-group {
+        flex: 1;
+        min-width: 250px;
+    }
+    
+    .period-group h3 {
+        margin-bottom: 0.5rem;
+        color: #4a90e2;
+    }
+    
+    .year-select, .month-select {
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 1rem;
+        margin-right: 0.5rem;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+        color: white;
+        padding: 0.5rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: all 0.3s;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    .btn-danger {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    }
+    
+    .period-block {
+        margin-bottom: 1.5rem;
+        background: white;
+        border-radius: 16px;
+        padding: 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .period-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .period-header h2 {
+        margin: 0;
+        font-size: 1.2rem;
+    }
+    
+    .period-stats {
+        display: flex;
+        gap: 1rem;
+    }
+    
+    .stat {
+        font-size: 0.85rem;
+    }
+    
+    .stats-table {
+        width: 100%;
+        font-size: 0.8rem;
+        border-collapse: collapse;
+    }
+    
+    .stats-table th, .stats-table td {
+        padding: 8px;
+        text-align: center;
+        border: 1px solid #e0e0e0;
+    }
+    
+    .stats-table th {
+        background-color: #4a90e2;
+        color: white;
+    }
+    
+    .total-row {
+        background-color: #f0f0f0;
+        font-weight: bold;
+    }
+    
+    .charts-row {
+        display: flex;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+    }
+    
+    .chart-box {
+        flex: 1;
+        background: white;
+        border-radius: 16px;
+        padding: 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .chart-box h3 {
+        text-align: center;
+        margin-bottom: 0.5rem;
+    }
+    
+    canvas {
+        max-width: 100%;
+        height: auto;
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 0.5rem;
+    }
+</style>
+
+<h1 style="margin-bottom: 1rem;">Аналитика договоров</h1>
+
+<div class="kpi-grid">
+    <div class="kpi-card blue">
+        <div class="kpi-title">ВСЕГО ДОГОВОРОВ</div>
+        <div class="kpi-value">{{ kpi.total }}</div>
+    </div>
+    <div class="kpi-card green">
+        <div class="kpi-title">ВЫПОЛНЕНО</div>
+        <div class="kpi-value">{{ kpi.completed }}</div>
+    </div>
+    <div class="kpi-card yellow">
+        <div class="kpi-title">В РАБОТЕ</div>
+        <div class="kpi-value">{{ kpi.in_progress }}</div>
+    </div>
+    <div class="kpi-card red">
+        <div class="kpi-title">ПРОСРОЧЕНО</div>
+        <div class="kpi-value">{{ kpi.overdue }}</div>
+    </div>
+    <div class="kpi-card purple">
+        <div class="kpi-title">ОБЩАЯ СУММА</div>
+        <div class="kpi-value">{{ "{:,.0f}".format(kpi.total_amount) }} руб.</div>
+    </div>
+</div>
+
+<div class="period-selector">
+    <div class="period-group">
+        <h3>Период 1</h3>
+        <select id="period1_year" class="year-select">
+            {% for year in years %}
+            <option value="{{ year }}" {% if period1 and period1.year|string == year %}selected{% endif %}>{{ year }}</option>
+            {% endfor %}
+        </select>
+        <select id="period1_month_from" class="month-select">
+            <option value="">Весь год</option>
+            {% for m in range(1,13) %}
+            <option value="{{ m }}" {% if period1 and period1.month_from == m %}selected{% endif %}>{{ m }}</option>
+            {% endfor %}
+        </select>
+        <span>-</span>
+        <select id="period1_month_to" class="month-select">
+            <option value="">Весь год</option>
+            {% for m in range(1,13) %}
+            <option value="{{ m }}" {% if period1 and period1.month_to == m %}selected{% endif %}>{{ m }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="period-group">
+        <h3>Период 2</h3>
+        <select id="period2_year" class="year-select">
+            {% for year in years %}
+            <option value="{{ year }}" {% if period2 and period2.year|string == year %}selected{% endif %}>{{ year }}</option>
+            {% endfor %}
+        </select>
+        <select id="period2_month_from" class="month-select">
+            <option value="">Весь год</option>
+            {% for m in range(1,13) %}
+            <option value="{{ m }}" {% if period2 and period2.month_from == m %}selected{% endif %}>{{ m }}</option>
+            {% endfor %}
+        </select>
+        <span>-</span>
+        <select id="period2_month_to" class="month-select">
+            <option value="">Весь год</option>
+            {% for m in range(1,13) %}
+            <option value="{{ m }}" {% if period2 and period2.month_to == m %}selected{% endif %}>{{ m }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
+        <button id="compareBtn" class="btn-primary">Сравнить</button>
+        <button id="exportPdfBtn" class="btn-primary btn-danger">Экспорт в PDF</button>
+    </div>
+</div>
+
+<div class="charts-row">
+    <div class="chart-box">
+        <h3>Количество договоров</h3>
+        <canvas id="chartCount" width="100%" height="200" style="max-height: 250px;"></canvas>
+    </div>
+    <div class="chart-box">
+        <h3>Сумма договоров (тыс. руб.)</h3>
+        <canvas id="chartAmount" width="100%" height="200" style="max-height: 250px;"></canvas>
+    </div>
+</div>
+
+<div class="period-block" id="period1Block">
+    <div class="period-header">
+        <h2 id="period1Title">Период 1</h2>
+        <div class="period-stats">
+            <div class="stat">Договоров: <strong id="period1Total">0</strong></div>
+            <div class="stat">Сумма: <strong id="period1Amount">0</strong> руб.</div>
+            <div class="stat">Выполнено: <strong id="period1Completed">0</strong></div>
+            <div class="stat">В работе: <strong id="period1InProgress">0</strong></div>
+        </div>
+    </div>
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <div style="flex: 1;">
+            <h4 style="margin-bottom: 0.5rem;">Количество договоров</h4>
+            <table class="stats-table">
+                <thead>
+                    <tr><th></th><th>новые (н)</th><th>старые (с)</th><th>выполнено</th><th>в работе</th><th>ИТОГО</th></tr>
+                </thead>
+                <tbody>
+                    <tr class="total-row">
+                        <td><strong>ИТОГО</strong></td>
+                        <td id="period1NewCount">0</td>
+                        <td id="period1OldCount">0</td>
+                        <td id="period1CompletedCount">0</td>
+                        <td id="period1InProgressCount">0</td>
+                        <td id="period1TotalCount">0</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div style="flex: 1;">
+            <h4 style="margin-bottom: 0.5rem;">Сумма договоров (руб.)</h4>
+            <table class="stats-table">
+                <thead>
+                    <tr><th></th><th>новые (н)</th><th>старые (с)</th><th>выполнено</th><th>в работе</th><th>ИТОГО</th></tr>
+                </thead>
+                <tbody>
+                    <tr class="total-row">
+                        <td><strong>ИТОГО</strong></td>
+                        <td id="period1NewAmount">0</td>
+                        <td id="period1OldAmount">0</td>
+                        <td id="period1CompletedAmount">0</td>
+                        <td id="period1InProgressAmount">0</td>
+                        <td id="period1TotalAmount">0</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="period-block" id="period2Block">
+    <div class="period-header">
+        <h2 id="period2Title">Период 2</h2>
+        <div class="period-stats">
+            <div class="stat">Договоров: <strong id="period2Total">0</strong></div>
+            <div class="stat">Сумма: <strong id="period2Amount">0</strong> руб.</div>
+            <div class="stat">Выполнено: <strong id="period2Completed">0</strong></div>
+            <div class="stat">В работе: <strong id="period2InProgress">0</strong></div>
+        </div>
+    </div>
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <div style="flex: 1;">
+            <h4 style="margin-bottom: 0.5rem;">Количество договоров</h4>
+            <table class="stats-table">
+                <thead>
+                    <tr><th></th><th>новые (н)</th><th>старые (с)</th><th>выполнено</th><th>в работе</th><th>ИТОГО</th></tr>
+                </thead>
+                <tbody>
+                    <tr class="total-row">
+                        <td><strong>ИТОГО</strong></td>
+                        <td id="period2NewCount">0</td>
+                        <td id="period2OldCount">0</td>
+                        <td id="period2CompletedCount">0</td>
+                        <td id="period2InProgressCount">0</td>
+                        <td id="period2TotalCount">0</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div style="flex: 1;">
+            <h4 style="margin-bottom: 0.5rem;">Сумма договоров (руб.)</h4>
+            <table class="stats-table">
+                <thead>
+                    <tr><th></th><th>новые (н)</th><th>старые (с)</th><th>выполнено</th><th>в работе</th><th>ИТОГО</th></tr>
+                </thead>
+                <tbody>
+                    <tr class="total-row">
+                        <td><strong>ИТОГО</strong></td>
+                        <td id="period2NewAmount">0</td>
+                        <td id="period2OldAmount">0</td>
+                        <td id="period2CompletedAmount">0</td>
+                        <td id="period2InProgressAmount">0</td>
+                        <td id="period2TotalAmount">0</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    const period1Data = {{ period1|tojson if period1 else 'null' }};
+    const period2Data = {{ period2|tojson if period2 else 'null' }};
+    
+    let chartCount, chartAmount;
+    
+    function formatNumber(num) {
+        if (num === undefined || num === null) return '0';
+        return num.toLocaleString('ru-RU');
+    }
+    
+    function updatePeriodUI(data, prefix) {
+        let title = `${data.year}`;
+        if (data.month_from && data.month_to) {
+            title += ` (мес. ${data.month_from}-${data.month_to})`;
+        } else if (data.month_from) {
+            title += ` (мес. ${data.month_from})`;
+        }
+        document.getElementById(`${prefix}Title`).innerText = title;
+        
+        document.getElementById(`${prefix}Total`).innerText = data.total;
+        document.getElementById(`${prefix}Amount`).innerText = formatNumber(data.total_amount);
+        document.getElementById(`${prefix}Completed`).innerText = data.completed;
+        document.getElementById(`${prefix}InProgress`).innerText = data.in_progress;
+        
+        document.getElementById(`${prefix}NewCount`).innerText = data.new_count;
+        document.getElementById(`${prefix}OldCount`).innerText = data.old_count;
+        document.getElementById(`${prefix}CompletedCount`).innerText = data.completed;
+        document.getElementById(`${prefix}InProgressCount`).innerText = data.in_progress;
+        document.getElementById(`${prefix}TotalCount`).innerText = data.total;
+        
+        document.getElementById(`${prefix}NewAmount`).innerText = formatNumber(data.new_amount);
+        document.getElementById(`${prefix}OldAmount`).innerText = formatNumber(data.old_amount);
+        document.getElementById(`${prefix}CompletedAmount`).innerText = formatNumber(data.completed_amount);
+        document.getElementById(`${prefix}InProgressAmount`).innerText = formatNumber(data.in_progress_amount);
+        document.getElementById(`${prefix}TotalAmount`).innerText = formatNumber(data.total_amount);
+    }
+    
+    function updateComparisonCharts(period1, period2) {
+        const months = period1.months_labels || period2.months_labels || [];
+        const period1Count = period1.monthly_totals || [];
+        const period2Count = period2.monthly_totals || [];
+        const period1Amount = (period1.monthly_amounts || []).map(v => Math.round(v / 1000));
+        const period2Amount = (period2.monthly_amounts || []).map(v => Math.round(v / 1000));
+        
+        if (chartCount) chartCount.destroy();
+        const ctxCount = document.getElementById('chartCount');
+        if (ctxCount && months.length > 0) {
+            chartCount = new Chart(ctxCount, {
+                type: 'bar',
+                data: {
+                    labels: months,
+                    datasets: [
+                        { label: `Период 1 (${period1.year})`, data: period1Count, backgroundColor: '#4a90e2', borderRadius: 6 },
+                        { label: `Период 2 (${period2.year})`, data: period2Count, backgroundColor: '#e74c3c', borderRadius: 6 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, title: { display: true, text: 'Количество' } } } }
+            });
+        }
+        
+        if (chartAmount) chartAmount.destroy();
+        const ctxAmount = document.getElementById('chartAmount');
+        if (ctxAmount && months.length > 0) {
+            chartAmount = new Chart(ctxAmount, {
+                type: 'bar',
+                data: {
+                    labels: months,
+                    datasets: [
+                        { label: `Период 1 (${period1.year})`, data: period1Amount, backgroundColor: '#4a90e2', borderRadius: 6 },
+                        { label: `Период 2 (${period2.year})`, data: period2Amount, backgroundColor: '#e74c3c', borderRadius: 6 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: true, scales: { y: { beginAtZero: true, title: { display: true, text: 'Тысячи рублей' } } } }
+            });
+        }
+    }
+    
+    function loadComparison() {
+        const period1_year = document.getElementById('period1_year').value;
+        const period1_month_from = document.getElementById('period1_month_from').value;
+        const period1_month_to = document.getElementById('period1_month_to').value;
+        const period2_year = document.getElementById('period2_year').value;
+        const period2_month_from = document.getElementById('period2_month_from').value;
+        const period2_month_to = document.getElementById('period2_month_to').value;
+        
+        const url = `/api/stats?period1_year=${period1_year}&period1_month_from=${period1_month_from}&period1_month_to=${period1_month_to}&period2_year=${period2_year}&period2_month_from=${period2_month_from}&period2_month_to=${period2_month_to}`;
+        
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (data.period1) updatePeriodUI(data.period1, 'period1');
+                if (data.period2) updatePeriodUI(data.period2, 'period2');
+                if (data.period1 && data.period2) updateComparisonCharts(data.period1, data.period2);
+            })
+            .catch(error => console.error('Ошибка:', error));
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        if (period1Data) updatePeriodUI(period1Data, 'period1');
+        if (period2Data) updatePeriodUI(period2Data, 'period2');
+        if (period1Data && period2Data) updateComparisonCharts(period1Data, period2Data);
+        
+        const compareBtn = document.getElementById('compareBtn');
+        if (compareBtn) compareBtn.addEventListener('click', loadComparison);
+        
+        const exportPdfBtn = document.getElementById('exportPdfBtn');
+        if (exportPdfBtn) {
+            exportPdfBtn.addEventListener('click', function() {
+                const period1_year = document.getElementById('period1_year').value;
+                const period1_month_from = document.getElementById('period1_month_from').value;
+                const period1_month_to = document.getElementById('period1_month_to').value;
+                const period2_year = document.getElementById('period2_year').value;
+                const period2_month_from = document.getElementById('period2_month_from').value;
+                const period2_month_to = document.getElementById('period2_month_to').value;
+                const url = `/dashboard/export/pdf?period1_year=${period1_year}&period1_month_from=${period1_month_from}&period1_month_to=${period1_month_to}&period2_year=${period2_year}&period2_month_from=${period2_month_from}&period2_month_to=${period2_month_to}`;
+                window.location.href = url;
+            });
+        }
+    });
+</script>
+
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width: 700px; margin: 0 auto; background: white; border-radius: 16px; padding: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+    <h1 style="margin-bottom: 1rem;">Загрузка файлом</h1>
+    <p style="margin-bottom: 1.5rem; color: #666;">Загрузите Excel-файл с несколькими договорами сразу.</p>
+    
+    <div style="margin-bottom: 1.5rem; background: #f0f7ff; padding: 1rem; border-radius: 12px;">
+        <h4 style="margin-bottom: 0.5rem;"> Требования к файлу:</h4>
+        <ul style="margin-left: 1.5rem; color: #666;">
+            <li>Формат: <strong>.xlsx</strong> или <strong>.xls</strong></li>
+            <li><strong>Обязательные колонки:</strong> Номер договора, Дата, Клиент, Сумма</li>
+            <li><strong>Дополнительные колонки:</strong> Тип (н/с), Статус, ИНН, Телефон, Менеджер, Email менеджера, Услуга, Срок выполнения</li>
+            <li>Дата в формате: <strong>ГГГГ-ММ-ДД</strong></li>
+        </ul>
+    </div>
+    
+    <div style="margin-bottom: 1.5rem;">
+        <a href="#" id="downloadTemplate" style="display: inline-block; background: #4a90e2; color: white; padding: 0.5rem 1rem; border-radius: 8px; text-decoration: none;">📥 Скачать шаблон Excel</a>
+    </div>
+    
+    <form method="post" enctype="multipart/form-data">
+        <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Выберите файл Excel</label>
+            <input type="file" name="file" accept=".xlsx,.xls" required style="width: 100%; padding: 0.5rem;">
+        </div>
+        <button type="submit" style="width: 100%; padding: 0.75rem; background: linear-gradient(135deg, #50c878 0%, #3da36d 100%); color: white; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer;">📤 Загрузить и импортировать</button>
+    </form>
+</div>
+
+<script>
+    document.getElementById('downloadTemplate').addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        let csv = 'Номер договора,Дата,Статус,Тип,Клиент,ИНН,Телефон,Менеджер,Email менеджера,Услуга,Сумма,Срок выполнения\n';
+        csv += 'Д-001,2025-01-15,В работе,н,ООО "Ромашка",7701010101,+7(495)111-22-33,Иванов Иван,ivanov@mail.ru,Аудит,150000,2025-12-31\n';
+        csv += 'Д-002,2025-02-10,Выполнен,с,АО "Лютик",7702020202,+7(495)222-33-44,Петров Петр,petrov@mail.ru,Консалтинг,250000,2025-06-30';
+        
+        const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'template_contracts.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+</script>
+{% endblock %}

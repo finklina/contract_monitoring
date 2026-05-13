@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto; background: white; border-radius: 16px; padding: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+    <h1 style="margin-bottom: 1.5rem;">Редактирование договора</h1>
+    
+    <form method="post">
+        <h3 style="margin-bottom: 1rem; color: #4a90e2;">Основная информация</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Номер договора</label>
+                <input type="text" value="{{ contract.contract_number }}" disabled style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px; background: #f5f5f5;">
+                <input type="hidden" name="contract_number" value="{{ contract.contract_number }}">
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Дата подписания *</label>
+                <input type="date" name="signing_contract_date" value="{{ contract.signing_contract_date }}" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Статус</label>
+                <select name="status" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                    <option value="В работе" {% if contract.status == 'В работе' %}selected{% endif %}>В работе</option>
+                    <option value="Выполнен" {% if contract.status == 'Выполнен' %}selected{% endif %}>Выполнен</option>
+                    <option value="Просрочен" {% if contract.status == 'Просрочен' %}selected{% endif %}>Просрочен</option>
+                </select>
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Тип договора</label>
+                <select name="type" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                    <option value="с" {% if contract.type == 'с' %}selected{% endif %}>Стандартный (с)</option>
+                    <option value="н" {% if contract.type == 'н' %}selected{% endif %}>Новый (н)</option>
+                </select>
+            </div>
+        </div>
+        
+        <h3 style="margin-bottom: 1rem; color: #4a90e2;">Заказчик</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Полное наименование заказчика *</label>
+                <input type="text" name="client_name" value="{{ contract.client_name }}" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">ИНН</label>
+                <input type="text" name="client_INN" value="{{ contract.client_INN or '' }}" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Телефон</label>
+                <input type="text" name="client_phone_number" value="{{ contract.client_phone_number or '' }}" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+            </div>
+        </div>
+        
+        <h3 style="margin-bottom: 1rem; color: #4a90e2;">Менеджер</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">ФИО менеджера</label>
+                <input type="text" name="manager_name" list="managers_list" value="{{ contract.manager_name or '' }}" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                <datalist id="managers_list">
+                    {% for m in managers %}
+                    <option value="{{ m.manager_name }}">{{ m.manager_name }}</option>
+                    {% endfor %}
+                </datalist>
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Email менеджера</label>
+                <input type="email" name="manager_email" value="{{ contract.manager_email or '' }}" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+            </div>
+        </div>
+        
+        <h3 style="margin-bottom: 1rem; color: #4a90e2;">Предмет договора</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Услуга</label>
+                <select name="service_id" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+                    <option value="">-- Выберите услугу --</option>
+                    {% for service in services %}
+                    <option value="{{ service.id_service }}" {% if contract.id_service == service.id_service %}selected{% endif %}>{{ service.service_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Сумма(₽)</label>
+                <input type="number" step="0.01" name="price" value="{{ contract.price or 0 }}" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Срок выполнения</label>
+                <input type="date" name="finishing_date" value="{{ contract.finishing_date or '' }}" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;">
+            </div>
+        </div>
+        
+        <div style="display: flex; gap: 1rem;">
+            <button type="submit" style="flex: 1; padding: 0.75rem; background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%); color: white; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer;">Сохранить изменения</button>
+            <a href="/" style="flex: 1; text-align: center; padding: 0.75rem; background: #e74c3c; color: white; text-decoration: none; border-radius: 8px;">Отмена</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
